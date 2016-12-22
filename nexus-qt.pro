@@ -81,9 +81,11 @@ contains(USE_UPNP, -) {
     win32:LIBS += -liphlpapi
 }
 
-#handle the LLD build option
-contains(USE_LLD, 1)
-{
+#handle the LLD build option. Default on LLD branch is to use LLD
+contains(USE_LLD, 0) {
+	message(Building without Lower Level Database Support)
+}
+else {
 	message(Building with Lower Level Database Support)
 	
 	DEFINES += USE_LLD
@@ -286,7 +288,8 @@ SOURCES += src/core/block.cpp \
 	src/LLD/index.cpp
 
 RESOURCES += \
-    src/qt/nexus.qrc
+    src/qt/nexus.qrc \
+    src/qt/Nexus.qrc
 
 FORMS += \
     src/qt/forms/sendcoinsdialog.ui \

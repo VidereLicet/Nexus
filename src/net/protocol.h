@@ -1,10 +1,10 @@
 /*******************************************************************************************
- 
-			Hash(BEGIN(Satoshi[2010]), END(Sunny[2012])) == Videlicet[2014] ++
-   
- [Learn and Create] Viz. http://www.opensource.org/licenses/mit-license.php
-  
-*******************************************************************************************/
+ * 
+ * "Trouble is found on the other side of the grave" - Videlicet
+ * 
+ * http://www.opensource.org/licenses/mit-license.php
+ * 
+ ******************************************************************************************/
 
 #ifndef __cplusplus
 # error This header can only be compiled as C++.
@@ -13,10 +13,10 @@
 #ifndef __INCLUDED_PROTOCOL_H__
 #define __INCLUDED_PROTOCOL_H__
 
-#include "../util/serialize.h"
+#include "../LLU/serialize.h"
 #include "netbase.h"
 #include <string>
-#include "../hash/uint1024.h"
+#include "../LLH/uint1024.h"
 
 #define NEXUS_PORT  9323
 #define NEXUS_CORE_LLP_PORT 9324

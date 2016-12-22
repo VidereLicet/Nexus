@@ -9,7 +9,7 @@
 #include "../main.h"
 #include "../wallet/db.h"
 #include "../wallet/walletdb.h"
-#include "../util/ui_interface.h"
+#include "../LLU/ui_interface.h"
 
 #include "rpcserver.h"
 #include "net.h"
@@ -226,6 +226,30 @@ namespace Net
 		// Shutdown will take long enough that the response should get back
 		StartShutdown();
 		return "Nexus server stopping";
+	}
+	
+	
+	Value getnetworkhashps(const Array& params, bool fHelp)
+	{
+		if (fHelp || params.size() != 0)
+			throw runtime_error(
+				"getnetworkhashps\n"
+				"Returns an approximate hash of the network based on the last X blocks. Default value is 100.");
+			
+		/* The calculation used will be 350 MH/s for 1 Block per Hour at difficulty 100. */
+
+		return (int)Core::nBestHeight;
+	}
+	
+	
+	Value getnetworkprimeps(const Array& params, bool fHelp)
+	{
+		if (fHelp || params.size() != 0)
+			throw runtime_error(
+				"getblockcount\n"
+				"Returns the number of blocks in the longest block chain.");
+
+		return (int)Core::nBestHeight;
 	}
 
 
