@@ -23,7 +23,7 @@ Distributed under the MIT/X11 software license, see the accompanying file licens
 This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/) and cryptographic software written by Eric Young (eay@cryptsoft.com) and UPnP software written by Thomas Bernard.</source>
         <translation>Copyright © 2011-2013 Nexus Desenvolvedores
 
-Este é um software experimental.
+Isto é um software experimental.
 
 Distribuído sob a licença de software MIT/X11, consulte o arquivo license.txt ou http://www.opensource.org/licenses/mit-license.php.
 
@@ -55,7 +55,7 @@ Este produto inclui software desenvolvido pelo OpenSSL Project para uso no OpenS
     <message>
         <location filename="../forms/addressbookpage.ui" line="60"/>
         <source>&amp;New Address...</source>
-        <translation>&amp;amp;Novo Endereço ...</translation>
+        <translation>&amp;Novo Endereço...</translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="71"/>
@@ -65,12 +65,12 @@ Este produto inclui software desenvolvido pelo OpenSSL Project para uso no OpenS
     <message>
         <location filename="../forms/addressbookpage.ui" line="74"/>
         <source>&amp;Copy to Clipboard</source>
-        <translation>&amp;amp;Copie para a área de transferência do sistema</translation>
+        <translation>&amp;Copie para a área de transferência do sistema</translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="85"/>
         <source>Show &amp;QR Code</source>
-        <translation>Show &amp;Código QR</translation>
+        <translation>Amostrar &amp;Código QR</translation>
     </message>
     <message>
         <location filename="../forms/addressbookpage.ui" line="96"/>
@@ -90,7 +90,7 @@ Este produto inclui software desenvolvido pelo OpenSSL Project para uso no OpenS
     <message>
         <location filename="../forms/addressbookpage.ui" line="113"/>
         <source>&amp;Delete</source>
-        <translation>&amp;amp;Excluir</translation>
+        <translation>&amp;Excluir</translation>
     </message>
     <message>
         <location filename="../addressbookpage.cpp" line="61"/>
@@ -167,7 +167,7 @@ Este produto inclui software desenvolvido pelo OpenSSL Project para uso no OpenS
     <message>
         <location filename="../forms/askpassphrasedialog.ui" line="50"/>
         <source>Enter passphrase</source>
-        <translation>Introduza a frase de acesso</translation>
+        <translation>Introduza a frase de segurança</translation>
     </message>
     <message>
         <location filename="../forms/askpassphrasedialog.ui" line="64"/>
@@ -228,7 +228,8 @@ Este produto inclui software desenvolvido pelo OpenSSL Project para uso no OpenS
         <location filename="../askpassphrasedialog.cpp" line="102"/>
         <source>WARNING: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR NexusS&lt;/b&gt;!
 Are you sure you wish to encrypt your wallet?</source>
-        <translation>AVISO: Se você criptografar sua carteira e perder sua senha, você vai &lt;b&gt;PERDER TODOS OS SEUS NexusS!&lt;/b&gt; Tem certeza de que deseja criptografar sua carteira?</translation>
+        <translation>AVISO: Se você criptografar sua carteira e perder sua senha, você vai &lt;b&gt;PERDER TODOS OS SEUS NexusS!&lt;/b&gt;
+Tem certeza de que deseja criptografar sua carteira?</translation>
     </message>
     <message>
         <location filename="../askpassphrasedialog.cpp" line="111"/>
@@ -315,7 +316,7 @@ Are you sure you wish to encrypt your wallet?</source>
     <message>
         <location filename="../core/gui.cpp" line="177"/>
         <source>Show general overview of wallet</source>
-        <translation>Mostrar visão geral da carteira</translation>
+        <translation>Amostrar visão geral da carteira</translation>
     </message>
     <message>
         <location filename="../core/gui.cpp" line="182"/>
@@ -345,7 +346,7 @@ Are you sure you wish to encrypt your wallet?</source>
     <message>
         <location filename="../core/gui.cpp" line="195"/>
         <source>Show the list of addresses for receiving payments</source>
-        <translation>Mostrar a lista de endereços para receber pagamentos</translation>
+        <translation>Amostrar a lista de endereços para receber pagamentos</translation>
     </message>
     <message>
         <location filename="../core/gui.cpp" line="200"/>
@@ -390,12 +391,12 @@ Are you sure you wish to encrypt your wallet?</source>
     <message>
         <location filename="../core/gui.cpp" line="233"/>
         <source>About &amp;Qt</source>
-        <translation>Acerca de &amp;Qt</translation>
+        <translation>Acerca &amp;Qt</translation>
     </message>
     <message>
         <location filename="../core/gui.cpp" line="234"/>
         <source>Show information about Qt</source>
-        <translation>Mostrar informação sobre Qt</translation>
+        <translation>Amostrar informação acerca Qt</translation>
     </message>
     <message>
         <location filename="../core/gui.cpp" line="236"/>
@@ -460,7 +461,7 @@ Are you sure you wish to encrypt your wallet?</source>
     <message>
         <location filename="../core/gui.cpp" line="272"/>
         <source>&amp;File</source>
-        <translation>&amp;amp;Arquivo</translation>
+        <translation>&amp;Arquivo</translation>
     </message>
     <message>
         <location filename="../core/gui.cpp" line="281"/>
@@ -480,7 +481,7 @@ Are you sure you wish to encrypt your wallet?</source>
     <message>
         <location filename="../core/gui.cpp" line="305"/>
         <source>Actions toolbar</source>
-        <translation>Barra de ações</translation>
+        <translation>Barra de ferramentas</translation>
     </message>
     <message>
         <location filename="../core/gui.cpp" line="317"/>
@@ -569,10 +570,11 @@ Amount: %2
 Type: %3
 Address: %4
 </source>
-        <translation>Data: %1
+        <translation>Data: %1 
 Quantidade: %2
 Tipo: %3
-Endereço: %4</translation>
+Endereço: %4
+</translation>
     </message>
     <message>
         <location filename="../core/gui.cpp" line="751"/>
@@ -633,12 +635,12 @@ Endereço: %4</translation>
     <message>
         <location filename="../forms/editaddressdialog.ui" line="25"/>
         <source>&amp;Label</source>
-        <translation>&amp;Rótulo</translation>
+        <translation>&amp;Etiqueta</translation>
     </message>
     <message>
         <location filename="../forms/editaddressdialog.ui" line="35"/>
         <source>The label associated with this address book entry</source>
-        <translation>O rótulo associado a esta entrada do livro de endereços</translation>
+        <translation>A etiqueta associada a esta entrada do livro de endereços</translation>
     </message>
     <message>
         <location filename="../forms/editaddressdialog.ui" line="42"/>
@@ -751,7 +753,7 @@ Endereço: %4</translation>
     <message>
         <location filename="../optionsdialog.cpp" line="202"/>
         <source>IP address of the proxy (e.g. 127.0.0.1)</source>
-        <translation>Endereço IP do proxy (e.g. 127.0.0.1)</translation>
+        <translation>Endereço IP do proxy (ex. 127.0.0.1)</translation>
     </message>
     <message>
         <location filename="../optionsdialog.cpp" line="205"/>
@@ -892,7 +894,7 @@ Endereço: %4</translation>
     <message>
         <location filename="../forms/overviewpage.ui" line="14"/>
         <source>Form</source>
-        <translation>De</translation>
+        <translation>Forma</translation>
     </message>
     <message>
         <location filename="../forms/overviewpage.ui" line="40"/>
@@ -978,17 +980,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../forms/qrcodedialog.ui" line="67"/>
         <source>Amount:</source>
-        <translation type="unfinished"/>
+        <translation>Quantidade</translation>
     </message>
     <message>
         <location filename="../forms/qrcodedialog.ui" line="102"/>
         <source>Niro</source>
-        <translation type="unfinished"/>
+        <translation>Niro</translation>
     </message>
     <message>
         <location filename="../forms/qrcodedialog.ui" line="118"/>
         <source>Label:</source>
-        <translation>Quantidade</translation>
+        <translation>Etiqueta</translation>
     </message>
     <message>
         <location filename="../forms/qrcodedialog.ui" line="141"/>
@@ -998,7 +1000,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../forms/qrcodedialog.ui" line="183"/>
         <source>&amp;Save As...</source>
-        <translation>Salvar Como...</translation>
+        <translation>&amp;Salvar Como...</translation>
     </message>
     <message>
         <location filename="../qrcodedialog.cpp" line="101"/>
@@ -1008,7 +1010,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../qrcodedialog.cpp" line="101"/>
         <source>PNG Images (*.png)</source>
-        <translation>PNG Imagens (*.png)</translation>
+        <translation>Imagens PNG (*.png)</translation>
     </message>
 </context>
 <context>
@@ -1033,7 +1035,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="67"/>
         <source>&amp;Add recipient...</source>
-        <translation>&amp;Add destinatário...</translation>
+        <translation>&amp;Adicionar destinatário...</translation>
     </message>
     <message>
         <location filename="../forms/sendcoinsdialog.ui" line="84"/>
@@ -1098,7 +1100,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../sendcoinsdialog.cpp" line="133"/>
         <source>Amount exceeds your balance</source>
-        <translation>O montante excede o seu saldo</translation>
+        <translation>A quantia excede o seu saldo</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="138"/>
@@ -1200,7 +1202,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../transactiondesc.cpp" line="26"/>
         <source>%1/offline?</source>
-        <translation>%1/desligada?</translation>
+        <translation>%1/offline?</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="28"/>
@@ -1263,12 +1265,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../transactiondesc.cpp" line="94"/>
         <source> (yours, label: </source>
-        <translation> (yours, rótulo: </translation>
+        <translation> (sua, etiqueta: </translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="96"/>
         <source> (yours)</source>
-        <translation> (seus)</translation>
+        <translation> (suas)</translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="131"/>
@@ -1303,7 +1305,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../transactiondesc.cpp" line="211"/>
         <source>&lt;b&gt;Net amount:&lt;/b&gt; </source>
-        <translation>&lt;b&gt;Valor líquido:&lt;/b&gt; </translation>
+        <translation>&lt;b&gt;Quantia líquida:&lt;/b&gt; </translation>
     </message>
     <message>
         <location filename="../transactiondesc.cpp" line="217"/>
@@ -1323,7 +1325,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../transactiondesc.cpp" line="224"/>
         <source>Generated coins must wait 120 blocks before they can be spent.  When you generated this block, it was broadcast to the network to be added to the block chain.  If it fails to get into the chain, it will change to &quot;not accepted&quot; and not be spendable.  This may occasionally happen if another node generates a block within a few seconds of yours.</source>
-        <translation>Moedas geradas devem esperar 120 blocos antes que eles possam ser gastos. Quando você gerou esse bloco, ele foi transmitido para a rede a ser adicionado à cadeia de bloco. Se não conseguir entrar na cadeia, irá mudar para "não aceite" E não ser gastável. Isso pode acontecer ocasionalmente se outro node gera um bloco dentro de alguns segundos do seu.</translation>
+        <translation>Moedas geradas devem esperar 120 blocos antes que eles possam ser gastas. Quando você gerou esse bloco, ele foi transmitido para a rede a ser adicionado à cadeia de bloco. Se não conseguir entrar na cadeia, irá mudar para "não aceite" E não ser gastável. Isso pode acontecer ocasionalmente se outro node gera um bloco dentro de alguns segundos do seu.</translation>
     </message>
 </context>
 <context>
@@ -1429,7 +1431,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../transactiontablemodel.cpp" line="394"/>
         <source>(n/a)</source>
-        <translation>(n/a)</translation>
+        <translation>(n/d)</translation>
     </message>
     <message>
         <location filename="../transactiontablemodel.cpp" line="593"/>
@@ -1538,7 +1540,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../transactionview.cpp" line="125"/>
         <source>Copy label</source>
-        <translation>Copiar rótulo</translation>
+        <translation>Copiar etiqueta</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="126"/>
@@ -1578,7 +1580,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../transactionview.cpp" line="279"/>
         <source>Type</source>
-        <translation>Type</translation>
+        <translation>Tipo</translation>
     </message>
     <message>
         <location filename="../transactionview.cpp" line="280"/>
@@ -1678,8 +1680,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../core/strings.cpp" line="12"/>
-        <source>Dont &apos;generate coins</source>
-        <translation>Não &apos;gerar moedas</translation>
+        <source>Don&apos;t generate coins</source>
+        <translation>&apos;Não gerar moedas</translation>
     </message>
     <message>
         <location filename="../core/strings.cpp" line="13"/>
@@ -1704,7 +1706,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../core/strings.cpp" line="17"/>
         <source>Allow DNS lookups for addnode and connect</source>
-        <translation>Permitir pesquisas de DNS para o addnode e conectar</translation>
+         <translation>Permitir DNS pesquisar um adnode para se conectar</translation>
     </message>
     <message>
         <location filename="../core/strings.cpp" line="18"/>
@@ -1728,13 +1730,13 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../core/strings.cpp" line="22"/>
-        <source>Dont &apos;accept connections from outside</source>
-        <translation>Não &apos;aceitar conexões de fora</translation>
+        <source>Don&apos;t accept connections from outside</source>
+        <translation>&apos;Não aceitar conexões de fora</translation>
     </message>
     <message>
         <location filename="../core/strings.cpp" line="23"/>
-        <source>Dont &apos;bootstrap list of peers using DNS</source>
-        <translation>Não &apos;aceitar conexões de fora</translation>
+        <source>Don&apos;t bootstrap list of peers using DNS</source>
+        <translation>&apos;Não aceitar conexões de DNS</translation>
     </message>
     <message>
         <location filename="../core/strings.cpp" line="24"/>
@@ -1758,8 +1760,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../core/strings.cpp" line="30"/>
-        <source>Dont &apos;attempt to use UPnP to map the listening port</source>
-        <translation>Não &apos;tente usar UPnP para mapear a porta de escuta</translation>
+        <source>Don&apos;t attempt to use UPnP to map the listening port</source>
+        <translation>&apos;Não tente usar UPnP para mapear a porta de escuta</translation>
     </message>
     <message>
         <location filename="../core/strings.cpp" line="31"/>
@@ -1834,7 +1836,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../core/strings.cpp" line="45"/>
         <source>Set key pool size to &lt;n&gt; (default: 100)</source>
-        <translation>Definir o tamanho do pool de chaves para &lt;n&gt; (Padrão: 100)</translation>
+        <translation>Definir o tamanho da pool de chaves para &lt;n&gt; (Padrão: 100)</translation>
     </message>
     <message>
         <location filename="../core/strings.cpp" line="46"/>
@@ -1884,7 +1886,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../core/strings.cpp" line="61"/>
         <source>Error loading addr.dat</source>
-        <translation>Erro carregando endereços...</translation>
+        <translation>Erro carregando addr.dat</translation>
     </message>
     <message>
         <location filename="../core/strings.cpp" line="63"/>
@@ -1939,7 +1941,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../core/strings.cpp" line="72"/>
         <source>Invalid amount for -paytxfee=&lt;amount&gt;</source>
-        <translation>Quantidade inválida para -paytxfee=&lt;montante&gt;</translation>
+        <translation>Quantidade inválida para -paytxfee=&lt;quantidade&gt;</translation>
     </message>
     <message>
         <location filename="../core/strings.cpp" line="73"/>
@@ -1954,7 +1956,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../core/strings.cpp" line="77"/>
         <source>Warning: Disk space is low  </source>
-        <translation>Aviso: espaço em disco é baixo  </translation>
+        <translation>Aviso: Espaço em disco é baixo  </translation>
     </message>
     <message>
         <location filename="../core/strings.cpp" line="78"/>
