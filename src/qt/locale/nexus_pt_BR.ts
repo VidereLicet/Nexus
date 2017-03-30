@@ -370,8 +370,8 @@ Tem certeza de que deseja criptografar sua carteira?</translation>
     </message>
     <message>
         <location filename="../core/gui.cpp" line="226"/>
-        <source>&amp;Exit</source>
-        <translation>&amp;Saida</translation>
+        <source>E&amp;xit</source>
+        <translation>S&amp;aida</translation>
     </message>
     <message>
         <location filename="../core/gui.cpp" line="227"/>
