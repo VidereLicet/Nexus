@@ -148,7 +148,7 @@ Este produto inclui software desenvolvido pelo OpenSSL Project para uso no OpenS
     <message>
         <location filename="../addresstablemodel.cpp" line="113"/>
         <source>(no label)</source>
-        <translation>(Sem etiqueta)</translation>
+        <translation>(sem etiqueta)</translation>
     </message>
 </context>
 <context>
@@ -361,7 +361,7 @@ Tem certeza de que deseja criptografar sua carteira?</translation>
     <message>
         <location filename="../core/gui.cpp" line="206"/>
         <source>Sign &amp;message</source>
-        <translation>Assinar &amp;mensagem</translation>
+        <translation>Assinar uma &amp;mensagem</translation>
     </message>
     <message>
         <location filename="../core/gui.cpp" line="207"/>
@@ -594,7 +594,7 @@ Endereço: %4
     <message>
         <location filename="../core/gui.cpp" line="782"/>
         <source>Wallet Data(*.dat)</source>
-        <translation>Dados da Wallet(*.dat)</translation>
+        <translation>Wallet Data(*.dat)</translation>
     </message>
     <message>
         <location filename="../core/gui.cpp" line="785"/>
@@ -846,7 +846,7 @@ Endereço: %4
     <message>
         <location filename="../forms/messagepage.ui" line="134"/>
         <source>&amp;Copy to Clipboard</source>
-        <translation>&amp;amp;Copie para a área de Transferência do Sistema</translation>
+        <translation>&amp;Copie para a área de Transferência do Sistema</translation>
     </message>
     <message>
         <location filename="../messagepage.cpp" line="74"/>
@@ -894,7 +894,7 @@ Endereço: %4
     <message>
         <location filename="../forms/overviewpage.ui" line="14"/>
         <source>Form</source>
-        <translation>Forma</translation>
+        <translation>Formato</translation>
     </message>
     <message>
         <location filename="../forms/overviewpage.ui" line="40"/>
@@ -1095,7 +1095,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../sendcoinsdialog.cpp" line="128"/>
         <source>The amount to pay must be larger than 0.</source>
-        <translation>O montante a pagar deve ser maior o que 0.</translation>
+        <translation>A quantia a pagar deve ser maior o que 0.</translation>
     </message>
     <message>
         <location filename="../sendcoinsdialog.cpp" line="133"/>
@@ -1681,7 +1681,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../core/strings.cpp" line="12"/>
         <source>Don&apos;t generate coins</source>
-        <translation>&apos;Não gerar moedas</translation>
+        <translation>Não gerar moedas</translation>
     </message>
     <message>
         <location filename="../core/strings.cpp" line="13"/>
@@ -1731,12 +1731,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../core/strings.cpp" line="22"/>
         <source>Don&apos;t accept connections from outside</source>
-        <translation>&apos;Não aceitar conexões de fora</translation>
+        <translation>Não aceitar conexões de fora</translation>
     </message>
     <message>
         <location filename="../core/strings.cpp" line="23"/>
         <source>Don&apos;t bootstrap list of peers using DNS</source>
-        <translation>&apos;Não aceitar conexões de DNS</translation>
+        <translation>Não aceitar conexões de DNS</translation>
     </message>
     <message>
         <location filename="../core/strings.cpp" line="24"/>
@@ -1966,7 +1966,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../core/strings.cpp" line="81"/>
         <source>Warning: Please check that your computer&apos;s date and time are correct.  If your clock is wrong Nexus will not work properly.</source>
-        <translation>Aviso: verifique se a data e a hora do seu computador estão corretas. Se o relógio estiver errado, Nexus não funcionará corretamente.</translation>
+        <translation>Aviso: Verifique se a data e a hora do seu computador estão corretas. Se o relógio estiver errado, Nexus não funcionará corretamente.</translation>
     </message>
     <message>
         <location filename="../core/strings.cpp" line="84"/>
