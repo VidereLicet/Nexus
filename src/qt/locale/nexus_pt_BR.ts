@@ -1856,7 +1856,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../core/strings.cpp" line="51"/>
         <source>Server certificate file (default: server.cert)</source>
-        <translation>Arquivo de certificado do servidor (padrão: server.pem)</translation>
+        <translation>Arquivo de certificado do servidor (padrão: server.cert)</translation>
     </message>
     <message>
         <location filename="../core/strings.cpp" line="52"/>
