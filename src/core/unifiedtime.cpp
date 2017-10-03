@@ -201,12 +201,12 @@ void ThreadUnifiedSamples(void* parg)
 		{
 		
 			/** Increment the Time Seed Connection Iterator. **/
-			nIterator++;
+			nIterator += GetRandInt(5);
 			
 			
 			/** Reset the ITerator if out of Seeds. **/
-			if(nIterator == SEEDS.size())
-			   nIterator = 0;
+			if(nIterator >= SEEDS.size())
+			   nIterator = GetRandInt(5);
 				
 				
 			/** Connect to the Next Seed in the Iterator. **/
