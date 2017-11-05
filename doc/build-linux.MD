@@ -100,7 +100,7 @@ To execute:
    compile. Arch has GCC 7 as the compiler and OpenSSL version is 1.1.
 
    [Downgrade](https://wiki.archlinux.org/index.php/Downgrading_packages) GCC
-   to by 6.3 finding or downloading the required package files and installing
+   to 6.3 by finding or downloading the required package files and installing
    them:
 
     ```
