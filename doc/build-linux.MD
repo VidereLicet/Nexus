@@ -84,3 +84,58 @@ To execute:
 To execute:
 
     ./nexus-qt
+
+
+## Build Instructions (Daemon): Arch Linux
+
+1. Install the dependencies:
+
+   ```
+   pacman -S base-devel boost db openssl-1.0 miniupnpc qrencode
+   ```
+
+2. Downgrade packages
+
+   Arch Linux uses the latest packages which will cause issues with the
+   compile. Arch has GCC 7 as the compiler and OpenSSL version is 1.1.
+
+   [Downgrade](https://wiki.archlinux.org/index.php/Downgrading_packages) GCC
+   to by 6.3 finding or downloading the required package files and installing
+   them:
+
+    ```
+    pacman -U gcc-6.3.1-2-x86_64.pkg.tar.xz gcc-libs-6.3.1-2-x86_64.pkg.tar.xz gcc-fortran-6.3.1-2-x86_64.pkg.tar.xz
+    ```
+
+3. Clone the git repo
+   
+   ```
+   git clone https://github.com/Nexusoft/Nexus.git Nexus
+   ```
+
+4. Edit the file makefile.unix
+
+   To make the compiler use OpenSSL 1.0 instead of the default 1.1 add the
+   following lines to makefile.unix:
+   ```
+   OPENSSL_INCLUDE_PATH=/usr/include/openssl-1.0/
+   OPENSSL_LIB_PATH=/usr/lib/openssl-1.0/
+   ```
+
+   Arch Linux does not allow static linking to some of the libraries. To
+   circumvent this make sure that static linking is disabled by commenting the
+   line:
+   ```
+   # LMODE = static
+   ```
+
+   Then check that there is a line that sets dynamic linking:
+   ```
+   LMODE = dynamic
+   ```
+
+5. Build and launch the daemon:
+   ```
+   make -f makefile.unix
+   ./nexus
+   ```
