@@ -67,7 +67,9 @@ zlib. You can solve this by installing the 32 bit version here:
     cd ~
     git clone https://github.com/Nexusoft/Nexus.git Nexus
     cd Nexus
-    make -f makefile.unix
+    make -f makefile.unix 
+    //OR for LLD//  
+    make -f makefile.unix USE_LLD=1
 
 To execute:
 
