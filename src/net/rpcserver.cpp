@@ -16,6 +16,7 @@
 #include "net.h"
 
 #include "../LLD/index.h"
+#include "../LLD/trustkeys.h"
 #include "../LLP/miningserver.h"
 
 #undef printf
@@ -75,7 +76,7 @@ namespace Net
     int64 AmountFromValue(const Value& value)
     {
         double dAmount = value.get_real();
-        if (dAmount <= 0.0 || dAmount > Core::MAX_TXOUT_AMOUNT)
+        if (dAmount <= 0.0 || dAmount > Core::MaxTxOut())
             throw JSONRPCError(-3, "Invalid amount");
         int64 nAmount = roundint64(dAmount * COIN);
         if (!Core::MoneyRange(nAmount))
@@ -331,7 +332,6 @@ namespace Net
 
         nAverageTime       /= nTotal;
         nAverageDifficulty /= nTotal;
-        /* TODO END **/
 
         Object obj;
         obj.push_back(Pair("average time", (int) nAverageTime));
@@ -357,29 +357,44 @@ namespace Net
         unsigned int nTotalActive = 0;
         Array trustkeys;
         Object ret;
-        for(std::map<uint576, Core::CTrustKey>::iterator it = Core::cTrustPool.mapTrustKeys.begin(); it != Core::cTrustPool.mapTrustKeys.end(); ++it)
-        {
-            Object obj;
 
-            if(it->second.Expired(0, Core::pindexBest->pprev->GetBlockHash()))
+        std::vector<uint576> vKeys;
+        LLD::CIndexDB indexdb("cr");
+        if(!indexdb.GetTrustKeys(vKeys))
+            return ret;
+
+        /* Search through the trust keys. */
+        for(auto key : vKeys)
+        {
+            Core::CTrustKey trustKey;
+            if(!indexdb.ReadTrustKey(key, trustKey))
                 continue;
 
-            /** Check the Wallet and Trust Keys in Trust Pool to see if we own any keys. **/
+            uint1024 hashLastBlock = trustKey.hashLastBlock;
+            if(!Core::mapBlockIndex.count(hashLastBlock))
+                continue;
+
+            if(Core::mapBlockIndex[hashLastBlock]->GetBlockTime() < (fTestNet ? Core::TESTNET_VERSION_TIMELOCK[3] : Core::NETWORK_VERSION_TIMELOCK[3]))
+                continue;
+
+            Object obj;
             Wallet::NexusAddress address;
-            address.SetPubKey(it->second.vchPubKey);
+            address.SetPubKey(trustKey.vchPubKey);
+
+            /* Read the previous block from disk. */
+            Core::CBlock block;
+            if(!block.ReadFromDisk(Core::mapBlockIndex[hashLastBlock], true))
+                continue;
 
             obj.push_back(Pair("address", address.ToString()));
-            obj.push_back(Pair("interest rate", 100.0 * Core::cTrustPool.InterestRate(it->first, GetUnifiedTimestamp())));
-            obj.push_back(Pair("trust key", it->second.ToString()));
-
-            nTotalActive ++;
+            obj.push_back(Pair("interest rate", 100.0 * trustKey.InterestRate(block, GetUnifiedTimestamp())));
+            obj.push_back(Pair("trust key", trustKey.ToString()));
 
             trustkeys.push_back(obj);
         }
 
         ret.push_back(Pair("keys", trustkeys));
-        ret.push_back(Pair("total active", (int) nTotalActive));
-        ret.push_back(Pair("total expired", (int) (Core::cTrustPool.mapTrustKeys.size() - nTotalActive)));
+        ret.push_back(Pair("total", (int)trustkeys.size()));
 
         return ret;
     }
@@ -2511,19 +2526,20 @@ namespace Net
                 "listtrustkeys\n"
                 "List all the Trust Keys this Node owns.\n");
 
-
-        /** Check each Trust Key to See if we Own it if there is no Key. **/
         Object result;
-        for(std::map<uint576, Core::CTrustKey>::iterator i = Core::cTrustPool.mapTrustKeys.begin(); i != Core::cTrustPool.mapTrustKeys.end(); ++i)
+        LLD::CTrustDB trustdb("cr");
+        LLD::CIndexDB indexdb("cr");
+
+        Core::CTrustKey trustKey;
+        if(trustdb.ReadMyKey(trustKey))
         {
 
-            /** Check the Wallet and Trust Keys in Trust Pool to see if we own any keys. **/
+            /* Set the wallet address. */
             Wallet::NexusAddress address;
-            address.SetPubKey(i->second.vchPubKey);
-            if(pwalletMain->HaveKey(address))
-                result.push_back(Pair(address.ToString(), i->second.Expired(0, Core::pindexBest->pprev->GetBlockHash()) ? "TRUE" : "FALSE"));
-
+            address.SetPubKey(trustKey.vchPubKey);
+            result.push_back(Pair(address.ToString(), Core::dInterestRate));
         }
+
 
         return result;
     }

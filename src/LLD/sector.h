@@ -36,6 +36,7 @@ namespace LLD
         TODO:: Add in the Database File Searching from Sector Keys. Allow Multiple Files.
 
     **/
+
     class SectorDatabase
     {
     protected:
@@ -131,8 +132,12 @@ namespace LLD
             ssKey << key;
             std::vector<unsigned char> vKey(ssKey.begin(), ssKey.end());
 
-            if(pTransaction){
+            if(pTransaction)
+            {
                 pTransaction->EraseTransaction(vKey);
+
+                if(pTransaction->mapTransactions.count(vKey))
+                    pTransaction->mapTransactions.erase(vKey);
 
                 return true;
             }
@@ -193,6 +198,9 @@ namespace LLD
             /** Commit to the Database. **/
             if(pTransaction)
             {
+                /* Check that the key is not pending in a transaction for Erase. */
+                if(pTransaction->mapEraseData.count(vKey))
+                    pTransaction->mapEraseData.erase(vKey);
 
                 std::vector<unsigned char> vOriginalData;
                 //Get(vKey, vOriginalData);

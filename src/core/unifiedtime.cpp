@@ -24,6 +24,10 @@ bool fIsSeedNode = false;
 int UNIFIED_AVERAGE_OFFSET = 0;
 int UNIFIED_MOVING_ITERATOR = 0;
 
+const int UNIFEED_TIME_ADJUSTMENT = 8240;
+const int UNIFIED_TIME_ADJUSTMENT_TESTNET = 144;
+int TIME_ADJUSTED = 0;
+
 
 /** Unified Time Declarations **/
 std::vector<int> UNIFIED_TIME_DATA;
@@ -32,9 +36,10 @@ std::vector<Net::CAddress> SEED_NODES;
 std::map<std::string, int> MAP_TIME_DATA;
 
 /** Declarations for the DNS Seed Nodes. **/
-static const std::vector<std::string> DNS_SeedNodes =
+static std::vector<std::string> DNS_SeedNodes =
 {
     "node1.nexusearth.com",
+    "node1.nexusoft.io",
     "node1.mercuryminer.com",
     "node1.nexusminingpool.com",
     "node1.nexus2.space",
@@ -45,6 +50,7 @@ static const std::vector<std::string> DNS_SeedNodes =
     "node1.nexplorer.io",
     "node1.positivism.trade",
     "node2.nexusearth.com",
+    "node2.nexusoft.io",
     "node2.mercuryminer.com",
     "node2.nexusminingpool.com",
     "node2.nexus2.space",
@@ -53,6 +59,7 @@ static const std::vector<std::string> DNS_SeedNodes =
     "node2.nxs.efficienthash.com",
     "node2.henryskinner.net",
     "node3.nexusearth.com",
+    "node3.nexusoft.io",
     "node3.mercuryminer.com",
     "node3.nexusminingpool.com",
     "node3.nexus2.space",
@@ -61,6 +68,7 @@ static const std::vector<std::string> DNS_SeedNodes =
     "node3.nxs.efficienthash.com",
     "node3.henryskinner.net",
     "node4.nexusearth.com",
+    "node4.nexusoft.io",
     "node4.mercuryminer.com",
     "node4.nexus2.space",
     "node4.barbequemedia.com",
@@ -68,6 +76,7 @@ static const std::vector<std::string> DNS_SeedNodes =
     "node4.nxs.efficienthash.com",
     "node4.henryskinner.net",
     "node5.nexusearth.com",
+    "node5.nexusoft.io",
     "node5.mercuryminer.com",
     "node5.barbequemedia.com",
     "node5.nxs.efficienthash.com",
@@ -110,21 +119,23 @@ static const std::vector<std::string> DNS_SeedNodes =
     "node19.mercuryminer.com",
     "node20.mercuryminer.com",
     "node21.mercuryminer.com",
-    "wallet5.ddns.net", //viod
+    "wallet5.ddns.net", //vido
     "wallet7.ddns.net",
     "wallet8.ddns.net"
 };
 
 /** Declarations for the DNS Seed Nodes. **/
-static const std::vector<std::string> DNS_SeedNodes_Testnet =
+static std::vector<std::string> DNS_SeedNodes_Testnet =
 {
-    "node1.nexusearth.com",
-    "node4.nexusearth.com"
+    "node1.nexusoft.io",
+    "node2.nexusoft.io",
+    "node3.nexusoft.io",
+    "node4.nexusoft.io"
 };
 
 
 /** Declarations for the DNS Seed Nodes. **/
-static const std::vector<std::string> DNS_SeedNodes_LISPnet =
+static std::vector<std::string> DNS_SeedNodes_LISPnet =
 {
     "node1.nexus.lispers.net",
     "node2.nexus.lispers.net",
@@ -143,7 +154,6 @@ static const std::vector<std::string> DNS_SeedNodes_LISPnet =
 
 /** Seed Nodes for Unified Time. **/
 std::vector<string> SEEDS;
-
 
 /** Baseline Maximum Values for Unified Time. **/
 int MAX_UNIFIED_DRIFT   = 10;
@@ -178,26 +188,69 @@ void ThreadUnifiedSamples(void* parg)
     /* set the proper Thread priorities. */
     SetThreadPriority(THREAD_PRIORITY_ABOVE_NORMAL);
 
+    /* Add Seed Nodes from command line parameter */
+    if (mapArgs.count("-addseednode"))
+    {
+        BOOST_FOREACH(string& strAddSeed, mapMultiArgs["-addseednode"])
+            (fLispNet ? DNS_SeedNodes_LISPnet : (fTestNet ? DNS_SeedNodes_Testnet : DNS_SeedNodes)).push_back(strAddSeed);
+    }
+
     /* Compile the Seed Nodes into a set of Vectors. */
     SEED_NODES    = DNS_Lookup(fLispNet ? DNS_SeedNodes_LISPnet : (fTestNet ? DNS_SeedNodes_Testnet : DNS_SeedNodes));
 
     /* Iterator to be used to ensure every time seed is giving an equal weight towards the Global Seeds. */
     int nIterator = -1;
-
     for(int nIndex = 0; nIndex < SEED_NODES.size(); nIndex++)
         SEEDS.push_back(SEED_NODES[nIndex].ToStringIP());
+
+    /* Move random shuffle here. */
+    std::random_shuffle(SEED_NODES.begin(), SEED_NODES.end(), GetRandInt);
+    for(int nIndex = 0; nIndex < SEED_NODES.size(); nIndex++)
+        Net::addrman.Add(SEED_NODES[nIndex], (Net::CNetAddr)SEED_NODES[nIndex], true);
 
     /* The Entry Client Loop for Core LLP. */
     string ADDRESS = "";
     LLP::CoreOutbound SERVER("", strprintf("%u", fLispNet ? LISPNET_CORE_LLP_PORT : (fTestNet ? TESTNET_CORE_LLP_PORT : NEXUS_CORE_LLP_PORT)));
 
-    //
-
     /* Latency Timer. */
-    loop() {
+    loop()
+    {
         try
         {
             Sleep(1000);
+
+            /* Check for unified time adjustment. This code will be removed in 2.5.1 release - only needed for one time unified time sync rollback */
+            if(GetUnifiedTimestamp() > (fTestNet ? Core::TESTNET_VERSION_TIMELOCK[3] : Core::NETWORK_VERSION_TIMELOCK[3]))
+            {
+                /* Get the time elapsed since the activation time-lock. */
+                unsigned int nTimestamp = (GetUnifiedTimestamp() - (fTestNet ? Core::TESTNET_VERSION_TIMELOCK[3] : Core::NETWORK_VERSION_TIMELOCK[3]));
+
+                /* Break this into ten minute increments for adjustment period. */
+                unsigned int nTenMinutes = (unsigned int)(nTimestamp / 600.0); //the total time passed unified offset
+
+                /* Add some time checking debug output. */ //TODO: for main release remove this debug output.
+                if(nTenMinutes < (fTestNet ? UNIFIED_TIME_ADJUSTMENT_TESTNET : UNIFEED_TIME_ADJUSTMENT) + 1)
+                    printf("***** Unified Time Check: time passed %u, ten mins %u, time adjusted %u, total to adjust %u\n", nTimestamp, nTenMinutes, TIME_ADJUSTED, (fTestNet ? UNIFIED_TIME_ADJUSTMENT_TESTNET : UNIFEED_TIME_ADJUSTMENT));
+
+                //adjust the clock if within the span of minutes past the time-lock
+                if(nTenMinutes < (fTestNet ? UNIFIED_TIME_ADJUSTMENT_TESTNET : UNIFEED_TIME_ADJUSTMENT) + 1 && nTenMinutes > TIME_ADJUSTED)
+                {
+                    /* Set the time adjusted to how many intervals of 10 minutes there have been. */
+                    TIME_ADJUSTED = nTenMinutes;
+
+                    /* Clear time samples to get the new offset. All time seeds should be rolled back 1 second at this point. */
+                    MAP_TIME_DATA.clear();
+
+                    /* Reduce the unified average offset by 1 second. */
+                    UNIFIED_AVERAGE_OFFSET -= 1;
+
+                    /* Debug output to show the clock adjustments. */
+                    printf("***** Unified Time: New timespan at %u minutes, adjusting clock back one second (%i new offset). Remaining %i seconds\n", (nTimestamp / 60), UNIFIED_AVERAGE_OFFSET, ((fTestNet ? UNIFIED_TIME_ADJUSTMENT_TESTNET : UNIFEED_TIME_ADJUSTMENT) - TIME_ADJUSTED));
+
+                    /* Sleep for 2 seconds then get seeds from other nodes again. */
+                    Sleep(2000);
+                }
+            }
 
 
             /* Randomize the Time Seed Connection Iterator. */
@@ -212,13 +265,13 @@ void ThreadUnifiedSamples(void* parg)
 
             /* If the Core LLP isn't connected, Retry in 10 Seconds. */
             if(!SERVER.Connected())
-            {
+            {   
+                /* Debug output. */
                 printf("***** Core LLP: Failed To Connect To %s:%s\n", SERVER.IP.c_str(), SERVER.PORT.c_str());
-
+                 
                 continue;
-            }
-
-
+             }
+            
             /* Use a CMajority to Find the Sample with the Most Weight. */
             CMajority<int> nSamples;
 
@@ -318,7 +371,7 @@ void ThreadUnifiedSamples(void* parg)
                     printf("***** %i Total Samples | %i Offset (%u) | %i Majority (%u) | %" PRId64 "\n", MAP_TIME_DATA.size(), nSamples.Majority(), TOTAL_SAMPLES[nSamples.Majority()], UNIFIED_AVERAGE_OFFSET, TOTAL_SAMPLES[UNIFIED_AVERAGE_OFFSET], GetUnifiedTimestamp());
             }
 
-            Sleep(30000);
+            Sleep(20000);
 
             continue;
 
@@ -328,7 +381,7 @@ void ThreadUnifiedSamples(void* parg)
 }
 
 /* DNS Query of Domain Names Associated with Seed Nodes */
-std::vector<Net::CAddress> DNS_Lookup(const std::vector<std::string>& DNS_Seed)
+std::vector<Net::CAddress> DNS_Lookup(std::vector<std::string>& DNS_Seed)
 {
     std::vector<Net::CAddress> vNodes;
     int scount = 0;
@@ -349,12 +402,10 @@ std::vector<Net::CAddress> DNS_Lookup(const std::vector<std::string>& DNS_Seed)
                 vNodes.push_back(addr);
 
                 printf("DNS Seed: %s\n", addr.ToStringIP().c_str());
-
-                //time penalty for seed nodes
-                Net::addrman.Add(addr, ip, true);
             }
         }
-    printf("DNS Seed Count: %d\n",scount);
+
+        printf("DNS Seed Count: %d\n",scount);
     }
 
     return vNodes;

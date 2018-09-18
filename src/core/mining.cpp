@@ -24,8 +24,6 @@ namespace Core
 {
 
     /** Used to Iterate the Coinbase Addresses used For Exchange Channels and Developer Fund. **/
-    static unsigned int nCoinbaseCounter = 0;
-    static boost::mutex COUNTER_MUTEX;
     static boost::mutex PROCESS_MUTEX;
 
     class COrphan
@@ -131,23 +129,18 @@ namespace Core
             else
                 txNew.vout[0].nValue = GetCoinbaseReward(pindexPrev, nChannel, 0);
 
-            COUNTER_MUTEX.lock();
-
-            /** Reset the Coinbase Transaction Counter. **/
-            if(nCoinbaseCounter >= 13)
-                nCoinbaseCounter = 0;
+            /* Make coinbase counter mod 13 of height. */
+            int nCoinbaseCounter = pindexPrev->nHeight % 13;
 
             /** Set the Proper Addresses for the Coinbase Transaction. **/
             txNew.vout.resize(txNew.vout.size() + 2);
-            txNew.vout[txNew.vout.size() - 2].scriptPubKey.SetNexusAddress(fTestNet ? TESTNET_DUMMY_ADDRESS : CHANNEL_ADDRESSES[nCoinbaseCounter]);
-            txNew.vout[txNew.vout.size() - 1].scriptPubKey.SetNexusAddress(fTestNet ? TESTNET_DUMMY_ADDRESS : DEVELOPER_ADDRESSES[nCoinbaseCounter]);
+            txNew.vout[txNew.vout.size() - 2].scriptPubKey.SetNexusAddress(fTestNet ? (cBlock.nVersion < 5 ? TESTNET_DUMMY_ADDRESS : TESTNET_DUMMY_AMBASSADOR_RECYCLED) : (cBlock.nVersion < 5 ? CHANNEL_ADDRESSES[nCoinbaseCounter] : AMBASSADOR_ADDRESSES_RECYCLED[nCoinbaseCounter]));
 
-            /** Set the Proper Coinbase Output Amounts for Recyclers and Developers. **/
+            txNew.vout[txNew.vout.size() - 1].scriptPubKey.SetNexusAddress(fTestNet ? (cBlock.nVersion < 5 ? TESTNET_DUMMY_ADDRESS : TESTNET_DUMMY_DEVELOPER_RECYCLED) : (cBlock.nVersion < 5 ? DEVELOPER_ADDRESSES[nCoinbaseCounter] : DEVELOPER_ADDRESSES_RECYCLED[nCoinbaseCounter]));
+
+            /* Set the Proper Coinbase Output Amounts for Recyclers and Developers. */
             txNew.vout[txNew.vout.size() - 2].nValue = GetCoinbaseReward(pindexPrev, nChannel, 1);
             txNew.vout[txNew.vout.size() - 1].nValue = GetCoinbaseReward(pindexPrev, nChannel, 2);
-
-            nCoinbaseCounter++;
-            COUNTER_MUTEX.unlock();
         }
 
         /** Add our Coinbase / Coinstake Transaction. **/
@@ -378,15 +371,25 @@ namespace Core
         to ensure that you do not submit a bad block. **/
     bool CheckWork(CBlock* pblock, Wallet::CWallet& wallet, Wallet::CReserveKey& reservekey)
     {
-        uint1024 hash = pblock->GetHash();
+        uint1024 hash = (pblock->nVersion < 5 ? pblock->GetHash() : pblock->GetChannel() == 0 ? pblock->StakeHash() : pblock->ProofHash());
         uint1024 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint1024();
 
         if(pblock->GetChannel() > 0 && !pblock->VerifyWork())
             return error("Nexus Miner : proof of work not meeting target.");
 
-        if(GetArg("-verbose", 0) >= 1){
+        if(pblock->GetChannel() == 0)
+        {
+            CBigNum bnTarget;
+            bnTarget.SetCompact(pblock->nBits);
+
+            if((pblock->nVersion < 5 ? pblock->GetHash() : pblock->StakeHash()) > bnTarget.getuint1024())
+                return error("Nexus Miner : proof of stake not meeting target");
+        }
+
+        if(GetArg("-verbose", 0) >= 1)
+        {
             printf("Nexus Miner: new %s block found\n", GetChannelName(pblock->GetChannel()).c_str());
-            printf("  hash: %s  \n", hash.ToString().substr(0, 30).c_str());
+            printf("  hash:   %s  \n", hash.ToString().substr(0, 30).c_str());
         }
 
         if(pblock->GetChannel() == 1)
@@ -395,12 +398,9 @@ namespace Core
             printf("  target: %s\n", hashTarget.ToString().substr(0, 30).c_str());
 
         printf("%s ", DateTimeStrFormat(GetUnifiedTimestamp()).c_str());
-        //printf("generated %s\n", FormatMoney(pblock->vtx[0].vout[0].nValue).c_str());
-
-        // Found a solution
         {
             LOCK(cs_main);
-            if (pblock->hashPrevBlock != hashBestChain && mapBlockIndex[pblock->hashPrevBlock]->GetChannel() == pblock->GetChannel())
+            if (pblock->hashPrevBlock != hashBestChain)
                 return error("Nexus Miner : generated block is stale");
 
             // Track how many getdata requests this block gets
@@ -409,11 +409,14 @@ namespace Core
                 wallet.mapRequestCount[pblock->GetHash()] = 0;
             }
 
+            /* Print the newly found block. */
+            pblock->print();
+
             /** Process the Block to see if it gets Accepted into Blockchain. **/
             if (!ProcessBlock(NULL, pblock))
                 return error("Nexus Miner : ProcessBlock, block not accepted\n");
 
-            /** Keep the Reserve Key only if it was used in a block. **/
+            /* Keep the Reserve Key only if it was used in a block. */
             reservekey.KeepKey();
         }
 

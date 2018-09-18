@@ -1,10 +1,17 @@
 #include "index.h"
+#include "trustkeys.h"
+
+#include "../main.h"
 #include "../core/core.h"
+
+#include "../util/ui_interface.h"
 
 /** Lower Level Database Name Space. **/
 namespace LLD
 {
     using namespace std;
+
+    uint1024 hashCorruptedNext = 0;
 
     bool CIndexDB::ReadTxIndex(uint512 hash, Core::CTxIndex& txindex)
     {
@@ -117,25 +124,67 @@ namespace LLD
         return Write(string("hashBestChain"), hashBestChain);
     }
 
-    bool CIndexDB::WriteTrustKey(uint512 hashTrustKey, Core::CTrustKey cTrustKey)
+    bool CIndexDB::WriteTrustKey(uint576 hashTrustKey, Core::CTrustKey cTrustKey)
     {
         return Write(make_pair(string("trustKey"), hashTrustKey), cTrustKey);
     }
 
-    bool CIndexDB::ReadTrustKey(uint512 hashTrustKey, Core::CTrustKey& cTrustKey)
+    bool CIndexDB::HasTrustKey(uint576 hashTrustKey)
+    {
+        return Exists(make_pair(string("trustKey"), hashTrustKey));
+    }
+
+    //this will be very slow. Think about optimizing it further.
+    bool CIndexDB::GetTrustKeys(std::vector<uint576>& vTrustKeys)
+    {
+        KeyDatabase* SectorKeys = GetKeychain(strKeychainRegistry);
+        if(!SectorKeys)
+            return error("Get() : Sector Keys not Registered for Name %s\n", strKeychainRegistry.c_str());
+
+        /* Get the keys from the keychain. */
+        std::vector< std::vector<unsigned char> > vKeys = SectorKeys->GetKeys();
+
+        /* Loop all the keys to check. */
+        for(auto vKey : vKeys)
+        {
+            CDataStream ssKey(vKey, SER_LLD, DATABASE_VERSION);
+            std::string strKey;
+            ssKey >> strKey;
+
+            if(strKey == "trustKey")
+            {
+                uint576 key;
+                ssKey >> key;
+
+                vTrustKeys.push_back(key);
+            }
+        }
+
+        return vTrustKeys.size() > 0;
+    }
+
+    bool CIndexDB::ReadTrustKey(uint576 hashTrustKey, Core::CTrustKey& cTrustKey)
     {
         return Read(make_pair(string("trustKey"), hashTrustKey), cTrustKey);
     }
 
-    bool CIndexDB::AddTrustBlock(uint512 hashTrustKey, uint1024 hashTrustBlock)
+    bool CIndexDB::EraseTrustKey(uint576 hashTrustKey)
     {
-        return Write(make_pair(string("trustBlock"), hashTrustBlock), hashTrustKey);
+        return Erase(make_pair(string("trustKey"), hashTrustKey));
     }
 
-    bool CIndexDB::RemoveTrustBlock(uint1024 hashTrustBlock)
+    bool CIndexDB::Bootstrapped()
     {
-        return Erase(make_pair(string("trustBlock"), hashTrustBlock));
+        uint256 hash;
+        return Read(string("bootstrapped"), hash);
     }
+
+    bool CIndexDB::Bootstrap()
+    {
+        uint256 hash = 0;
+        return Write(string("bootstrapped"), hash);
+    }
+
 
     Core::CBlockIndex static * InsertBlockIndex(uint1024 hash)
     {
@@ -164,13 +213,24 @@ namespace LLD
         if(!ReadHashBestChain(Core::hashBestChain))
             return error("No Hash Best Chain in Index Database.");
 
+
+        unsigned int nTotalBlocks = 0;
+        Core::CDiskBlockIndex diskindexBest;
+        if(Read(make_pair(string("blockindex"), Core::hashBestChain), diskindexBest))
+            nTotalBlocks = diskindexBest.nHeight;
+
+
         uint1024 hashBlock = Core::hashGenesisBlock;
+        std::vector<uint576> vTrustKeys;
+
+        bool fBootstrap = !Bootstrapped();
+        std::map<uint576, unsigned int> mapLastBlocks;
         while(!fRequestShutdown)
         {
             Core::CDiskBlockIndex diskindex;
             if(!Read(make_pair(string("blockindex"), hashBlock), diskindex))
             {
-                printf("Failed to Read Block %s Height %u\n", hashBlock.ToString().substr(0, 20).c_str(), diskindex.nHeight);
+                printf("Failed to Read Block %s Height %u\n", hashBlock.ToString().c_str(), diskindex.nHeight);
 
                 break;
             }
@@ -262,21 +322,53 @@ namespace LLD
                     }
                 }
 
-
-                //TODO: Trust key accept with no cBlock (CBlockIndex instead)
-                if(pindexNew->IsProofOfStake())
+                if(fBootstrap && pindexNew->IsProofOfStake() && pindexNew->nVersion < 5)
                 {
                     Core::CBlock block;
                     if(!block.ReadFromDisk(pindexNew))
                         return error("CTxDB::LoadBlockIndex() : Failed to Read Block");
 
-                    if(!Core::cTrustPool.Accept(block, true))
-                        return error("CTxDB::LoadBlockIndex() : Failed To Accept Trust Key Block.");
+                    std::vector<unsigned char> vTrustKey;
+                    if(!block.TrustKey(vTrustKey))
+                        return error("CTxDb::LoadBlockIndex() : Failed to extract new trust key");
 
-                    if(!Core::cTrustPool.Connect(block, true))
-                        return error("CTxDB::LoadBlockIndex() : Failed To Connect Trust Key Block.");
+                    uint576 cKey;
+                    cKey.SetBytes(vTrustKey);
+
+                    //log the time of the last block
+                    mapLastBlocks[cKey] = block.nTime;
+
+                    Core::CTrustKey trustKey;
+                    if(!ReadTrustKey(cKey, trustKey))
+                    {
+                        trustKey = Core::CTrustKey(vTrustKey, block.GetHash(), block.vtx[0].GetHash(), block.nTime);
+                        trustKey.hashLastBlock = block.GetHash();
+                        WriteTrustKey(cKey, trustKey);
+
+                        vTrustKeys.push_back(cKey);
+
+                        //printf("CTxDb::LoadBlockIndex() : Writing Genesis %u Key to Disk %s\n", block.nHeight, cKey.ToString().substr(0, 20).c_str());
+                    }
+                    else
+                    {
+                        trustKey.hashLastBlock = block.GetHash();
+                        WriteTrustKey(cKey, trustKey);
+                    }
                 }
 
+                if(nTotalBlocks > 0)
+                {
+                    if(fBootstrap && pindexNew->nHeight % 1000 == 0)
+                    {
+                        std::string str = strprintf("Reindexing %.2f %% Complete... Do Not Close.", (pindexNew->nHeight * 100.0 / nTotalBlocks));
+                        InitMessage(str.c_str());
+                    }
+                    else if(pindexNew->nHeight % 1000 == 0)
+                    {
+                        std::string str = strprintf("Index Loading %.2f %% Complete...", (pindexNew->nHeight * 100.0 / nTotalBlocks));
+                        InitMessage(str.c_str());
+                    }
+                }
             }
 
             /** Add the Pending Checkpoint into the Blockchain. **/
@@ -288,17 +380,74 @@ namespace LLD
             Core::pindexBest  = pindexNew;
             hashBlock = diskindex.hashNext;
         }
+
+
+        /* Check for my trust key. */
+        if(fBootstrap)
+        {
+            InitMessage("Cleaning up Expired Trust Keys...");
+            Bootstrap();
+
+            LLD::CTrustDB trustdb("r+");
+            Core::CTrustKey myTrustKey;
+            uint576 myKey;
+
+            /* If one has their trust key. */
+            bool fHasKey = trustdb.ReadMyKey(myTrustKey);
+            if(fHasKey)
+                myKey.SetBytes(myTrustKey.vchPubKey);
+
+            /* Erase expired trust keys. */
+            for(auto key : vTrustKeys)
+            {
+                if(mapLastBlocks.count(key) && mapLastBlocks[key] + Core::TRUST_KEY_EXPIRE < Core::pindexBest->GetBlockTime())
+                {
+                    EraseTrustKey(key);
+
+                    printf("Erasing Expired Trust Key %s\n", HexStr(key.begin(), key.end()).c_str());
+
+                    if(fHasKey && key == myKey)
+                        trustdb.EraseMyKey();
+
+                    continue;
+                }
+            }
+        }
+
         if(fRequestShutdown)
             return false;
 
-        Core::nBestHeight = Core::pindexBest->nHeight;
+        Core::nBestHeight     = Core::pindexBest->nHeight;
         Core::nBestChainTrust = Core::pindexBest->nChainTrust;
         Core::hashBestChain   = Core::pindexBest->GetBlockHash();
         printf("[DATABASE] Indexes Loaded. Height %u Hash %s\n", Core::nBestHeight, Core::pindexBest->GetBlockHash().ToString().substr(0, 20).c_str());
 
+        /* Handle corrupted database. */
+        if(Core::pindexBest->pnext)
+        {
+            /* Get the hash of the next block. */
+            hashCorruptedNext = Core::pindexBest->pnext->GetBlockHash();
+
+            /* Debug output. */
+            printf("[DATABASE] Found corrupted pnext %s... Resolving\n", hashCorruptedNext.ToString().substr(0, 20).c_str());
+
+            /* Set the memory index to 0 */
+            Core::pindexBest->pnext = 0;
+
+            /* Set the disk index back to 0. */
+            Core::CDiskBlockIndex blockindex(Core::pindexBest);
+            blockindex.hashNext = 0;
+            if (!WriteBlockIndex(blockindex))
+                return error("LoadBlockIndex() : WriteBlockIndex failed");
+
+            /* Erase mapblockindex if found. */
+            if(Core::mapBlockIndex.count(hashCorruptedNext))
+                Core::mapBlockIndex.erase(hashCorruptedNext);
+        }
+
         /** Verify the Blocks in the Best Chain To Last Checkpoint. **/
         int nCheckLevel = GetArg("-checklevel", 6);
-        int nCheckDepth = GetArg( "-checkblocks", 10);
+        int nCheckDepth = GetArg("-checkblocks", 10);
         if (nCheckDepth == 0)
             nCheckDepth = 1000000000;
 

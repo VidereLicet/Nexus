@@ -106,6 +106,8 @@ void Shutdown(void* parg)
 
 void HandleSIGTERM(int)
 {
+    StartShutdown();
+
     fRequestShutdown = true;
 }
 
@@ -163,15 +165,24 @@ bool AppInit2(int argc, char* argv[])
         sa.sa_handler = HandleSIGTERM;
         sigemptyset(&sa.sa_mask);
         sa.sa_flags = 0;
-        sigaction(SIGTERM, &sa, NULL);
+
+        //catch all signals to flag fShutdown for all threads
+        sigaction(SIGABRT, &sa, NULL);
+        sigaction(SIGILL, &sa, NULL);
         sigaction(SIGINT, &sa, NULL);
-        sigaction(SIGHUP, &sa, NULL);
+        sigaction(SIGTERM, &sa, NULL);
+
     #else
+        //catch all signals to flag fShutdown for all threads
+        signal(SIGABRT, HandleSIGTERM);
+        signal(SIGILL, HandleSIGTERM);
         signal(SIGINT, HandleSIGTERM);
         signal(SIGTERM, HandleSIGTERM);
+
     #ifdef SIGBREAK
         signal(SIGBREAK, HandleSIGTERM);
     #endif
+
     #endif
 
     //
@@ -199,6 +210,7 @@ bool AppInit2(int argc, char* argv[])
           _("Options:") + "\n" +
             "  -conf=<file>     \t\t  " + _("Specify configuration file (default: nexus.conf)") + "\n" +
             "  -pid=<file>      \t\t  " + _("Specify pid file (default: Nexus.pid)") + "\n" +
+            "  -wallet=<file>   \t\t  " + _("Specify wallet fille (default: wallet.dat)") + "\n" +
             "  -gen             \t\t  " + _("Generate coins") + "\n" +
             "  -gen=0           \t\t  " + _("Don't generate coins") + "\n" +
             "  -min             \t\t  " + _("Start minimized") + "\n" +
@@ -209,11 +221,14 @@ bool AppInit2(int argc, char* argv[])
             "  -timeout=<n>     \t  "   + _("Specify connection timeout (in milliseconds)") + "\n" +
             "  -proxy=<ip:port> \t  "   + _("Connect through socks4 proxy") + "\n" +
             "  -dns             \t  "   + _("Allow DNS lookups for addnode and connect") + "\n" +
-            "  -port=<port>     \t\t  " + _("Listen for connections on <port> (default: 9323 or testnet: 9903)") + "\n" +
+            "  -port=<port>     \t\t  " + _("Listen for connections on <port> (default: 9323 or testnet: 8313)") + "\n" +
             "  -maxconnections=<n>\t  " + _("Maintain at most <n> connections to peers (default: 125)") + "\n" +
             "  -addnode=<ip>    \t  "   + _("Add a node to connect to and attempt to keep the connection open") + "\n" +
+            "  -addseednode=<ip>    "   + _("Add a node to list of hardcoded seed nodes") + "\n" +
             "  -connect=<ip>    \t\t  " + _("Connect only to the specified node") + "\n" +
             "  -listen          \t  "   + _("Accept connections from outside (default: 1)") + "\n" +
+            "  -unified         \t  "   + _("Enable sending unified time samples. Used for seed nodes") + "\n" +
+            "  -unifiedport     \t  "   + _("Listen for unified time samples on <port> (default: 9324 or testnet: 8329). Does not affect outgoing port.") + "\n" +
         #ifdef QT_GUI
                     "  -lang=<lang>     \t\t  " + _("Set language, for example \"de_DE\" (default: system locale)") + "\n" +
         #endif
@@ -249,6 +264,7 @@ bool AppInit2(int argc, char* argv[])
                     "  -llpallowip=<ip> \t  "   + _("Allow mining from specified IP address or range (192.168.6.* for example") + "\n" +
                     "  -banned=<ip>     \t  "   + _("Manually Ban Addresses from Config File") + "\n" +
                     "  -mining             \t  "   + _("Allow mining (default: 0)") + "\n" +
+                    "  -miningport=<port> "     + _("Listen for mining connections on <port> (default: 9325)") + "\n" +
                     "  -rpcuser=<user>  \t  "   + _("Username for JSON-RPC connections") + "\n" +
                     "  -rpcpassword=<pw>\t  "   + _("Password for JSON-RPC connections") + "\n" +
                     "  -rpcport=<port>  \t\t  " + _("Listen for JSON-RPC connections on <port> (default: 9325)") + "\n" +
@@ -323,7 +339,7 @@ bool AppInit2(int argc, char* argv[])
         }
     #endif
 
-    #if !defined(WIN32) && !defined(QT_GUI)
+    #if !defined(WIN32) && !defined(QT_GUI) && !defined(NO_DAEMON)
         if (fDaemon)
         {
             // Daemonize
@@ -345,9 +361,79 @@ bool AppInit2(int argc, char* argv[])
         }
     #endif
 
+    if(fTestNet)
+    {
+        Wallet::CScript scriptSig;
+        scriptSig.SetNexusAddress(Core::TESTNET_DUMMY_ADDRESS);
+        Core::TESTNET_DUMMY_SIGNATURE = (std::vector<unsigned char>)scriptSig;
+
+
+        scriptSig.clear();
+        scriptSig.SetNexusAddress(Core::TESTNET_DUMMY_AMBASSADOR_RECYCLED);
+        Core::TESTNET_DUMMY_SIGNATURE_AMBASSADOR_RECYCLED = (std::vector<unsigned char>)scriptSig;
+
+
+        scriptSig.clear();
+        scriptSig.SetNexusAddress(Core::TESTNET_DUMMY_DEVELOPER_RECYCLED);
+        Core::TESTNET_DUMMY_SIGNATURE_DEVELOPER_RECYCLED = (std::vector<unsigned char>)scriptSig;
+    }
+
+    Wallet::CScript scriptSig;
+    for(int i = 0; i < 13; i++)
+    {
+        /* Set the script byte code for ambassador addresses old. */
+        scriptSig.clear();
+        scriptSig.SetNexusAddress(Core::CHANNEL_ADDRESSES[i]);
+        Core::AMBASSADOR_SCRIPT_SIGNATURES[i] = (std::vector<unsigned char>)scriptSig;
+
+        if(GetBoolArg("-dumpsignatures", false))
+        {
+            printf("Ambassador Script %s\n", Core::CHANNEL_ADDRESSES[i].c_str());
+            PrintHex(scriptSig);
+            printf("\n\n");
+        }
+
+        /* Set the script byte code for ambassador addresses new. */
+        scriptSig.clear();
+        scriptSig.SetNexusAddress(Core::AMBASSADOR_ADDRESSES_RECYCLED[i]);
+        Core::AMBASSADOR_SCRIPT_SIGNATURES_RECYCLED[i] = (std::vector<unsigned char>)scriptSig;
+
+        if(GetBoolArg("-dumpsignatures", false))
+        {
+            printf("Ambassador New Script %s\n", Core::AMBASSADOR_ADDRESSES_RECYCLED[i].c_str());
+            PrintHex(Core::AMBASSADOR_SCRIPT_SIGNATURES_RECYCLED[i]);
+            printf("\n\n");
+        }
+
+        /* Set the script byte code for developer addresses old. */
+        scriptSig.clear();
+        scriptSig.SetNexusAddress(Core::DEVELOPER_ADDRESSES[i]);
+        Core::DEVELOPER_SCRIPT_SIGNATURES[i] = (std::vector<unsigned char>)scriptSig;
+
+        if(GetBoolArg("-dumpsignatures", false))
+        {
+            printf("Developer Script %s\n", Core::DEVELOPER_ADDRESSES[i].c_str());
+            PrintHex(Core::DEVELOPER_SCRIPT_SIGNATURES[i]);
+            printf("\n\n");
+        }
+
+        /* Set the script byte code for developer addresses new. */
+        scriptSig.clear();
+        scriptSig.SetNexusAddress(Core::DEVELOPER_ADDRESSES_RECYCLED[i]);
+        Core::DEVELOPER_SCRIPT_SIGNATURES_RECYCLED[i] = (std::vector<unsigned char>)scriptSig;
+
+        if(GetBoolArg("-dumpsignatures", false))
+        {
+            printf("Developer New Script %s\n", Core::DEVELOPER_ADDRESSES_RECYCLED[i].c_str());
+            PrintHex(Core::DEVELOPER_SCRIPT_SIGNATURES_RECYCLED[i]);
+            printf("\n\n");
+        }
+    }
+
     printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
     printf("Nexus version %s (%s)\n", FormatFullVersion().c_str(), CLIENT_DATE.c_str());
     printf("Default data directory %s\n", GetDefaultDataDir().string().c_str());
+
 
     for(auto node : mapMultiArgs["-banned"])
         printf("PERMANENT BAN %s\n", node.c_str());
@@ -355,6 +441,7 @@ bool AppInit2(int argc, char* argv[])
     #ifdef USE_LLD
         InitMessage(_("Initializing LLD Keychains..."));
         LLD::RegisterKeychain("blkindex", "blkindex");
+        LLD::RegisterKeychain("trust", "trust");
     #endif
 
     InitMessage(_("Initializing Unified Time..."));
@@ -377,6 +464,14 @@ bool AppInit2(int argc, char* argv[])
     }
     std::ostringstream strErrors;
 
+    /**Wallet filename validity check. **/
+    if (!boost::filesystem::native(GetArg("-wallet", "wallet.dat")))
+    {
+	printf("Invalid wallet file name");
+        strErrors << _("Invalid wallet filename") << "\n";
+        ThreadSafeMessageBox(strErrors.str(), _("Nexus"), wxOK | wxMODAL);
+        return false;
+    }
 
 
     /** Run the process as Daemon RPC/LLP Server if Flagged. **/
@@ -419,7 +514,7 @@ bool AppInit2(int argc, char* argv[])
     printf("Loading wallet...\n");
     nStart = GetTimeMillis();
     bool fFirstRun;
-    pwalletMain = new Wallet::CWallet("wallet.dat");
+    pwalletMain = new Wallet::CWallet(GetArg("-wallet", "wallet.dat"));
     int nLoadWalletRet = pwalletMain->LoadWallet(fFirstRun);
     if (nLoadWalletRet != Wallet::DB_LOAD_OK)
     {
@@ -594,7 +689,7 @@ bool AppInit2(int argc, char* argv[])
                 Net::addrman.Add(addr, Net::CNetAddr("127.0.0.1"));
         }
     }
-
+    
     if (mapArgs.count("-paytxfee"))
     {
         if (!ParseMoney(mapArgs["-paytxfee"], Core::nTransactionFee) || Core::nTransactionFee < Core::MIN_TX_FEE)
@@ -636,17 +731,17 @@ bool AppInit2(int argc, char* argv[])
     /* Initialize the Core LLP if it is enabled. */
     if(GetBoolArg("-unified", false)) {
         InitMessage(_("Initializing Core LLP..."));
-        printf("Initializing Core LLP...\n");
-        LLP_SERVER = new LLP::Server<LLP::CoreLLP>(fLispNet ? LISPNET_CORE_LLP_PORT : fTestNet ? TESTNET_CORE_LLP_PORT : NEXUS_CORE_LLP_PORT, 5, true, 2, 5, 5);
+        printf("%%%%%%%% Initializing Core LLP...\n");
+        LLP_SERVER = new LLP::Server<LLP::CoreLLP>(GetArg("-unifiedport", fLispNet ? LISPNET_CORE_LLP_PORT : fTestNet ? TESTNET_CORE_LLP_PORT : NEXUS_CORE_LLP_PORT), 5, true, 2, 5, 5);
     }
 
 
     /* Initialize the Mining LLP if it is enabled. */
     if(GetBoolArg("-mining", false)) {
         InitMessage(_("Initializing Mining LLP..."));
-        printf("%%%%%%%%%% Initializing Mining LLP...");
+        printf("%%%%%%%%%% Initializing Mining LLP...\n");
 
-        LLP::MINING_LLP = new LLP::Server<LLP::MiningLLP>(fLispNet ? LISPNET_MINING_LLP_PORT : fTestNet ? TESTNET_MINING_LLP_PORT : NEXUS_MINING_LLP_PORT, GetArg("-mining_threads", 10), true, GetArg("-mining_cscore", 5), GetArg("-mining_rscore", 50), GetArg("-mining_timout", 60));
+        LLP::MINING_LLP = new LLP::Server<LLP::MiningLLP>(GetArg("-miningport", fLispNet ? LISPNET_MINING_LLP_PORT : fTestNet ? TESTNET_MINING_LLP_PORT : NEXUS_MINING_LLP_PORT), GetArg("-mining_threads", 10), true, GetArg("-mining_cscore", 5), GetArg("-mining_rscore", 50), GetArg("-mining_timout", 60));
     }
 
     if (!Core::CheckDiskSpace())
@@ -685,4 +780,3 @@ bool AppInit2(int argc, char* argv[])
 
     return true;
 }
-

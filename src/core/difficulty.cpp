@@ -111,11 +111,6 @@ namespace Core
     /** Proof of Stake Retargeting: Modulate Difficulty based on production rate. **/
     unsigned int RetargetPOS(const CBlockIndex* pindex, bool output)
     {
-        /** Do not retarget in regression test mode. **/
-        if (GetBoolArg("-regtest",false)) {
-            return bnProofOfWorkStartRegtest[0].GetCompact();
-        }
-
         /** Get Last Block Index [1st block back in Channel]. **/
         const CBlockIndex* pindexFirst = GetLastChannelIndex(pindex, 0);
         if (pindexFirst->pprev == NULL)
@@ -179,14 +174,8 @@ namespace Core
 
 
         /** Don't allow Difficulty to decrease below minimum. **/
-        if (GetBoolArg("-regtest",false)) {
-            if (bnNew > bnProofOfWorkLimitRegtest[0])
-                bnNew = bnProofOfWorkLimitRegtest[0];
-        }
-        else {
-            if (bnNew > bnProofOfWorkLimit[0])
-                bnNew = bnProofOfWorkLimit[0];
-        }
+        if (bnNew > bnProofOfWorkLimit[0])
+            bnNew = bnProofOfWorkLimit[0];
 
 
         if(GetArg("-verbose", 0) >= 1 && output)
@@ -194,7 +183,7 @@ namespace Core
             int64 nDays, nHours, nMinutes;
             GetChainTimes(GetChainAge(pindexFirst->GetBlockTime()), nDays, nHours, nMinutes);
 
-            printf("CHECK[POS] weighted time=%" PRId64 " actual time =%" PRId64 "[%f %%]\n\tchain time: [%" PRId64 " / %" PRId64 "]\n\tdifficulty: [%f to %f]\n\tPOS height: %" PRId64 " [AGE %" PRId64 " days, %" PRId64 " hours, %" PRId64 " minutes]\n\n",
+            printf("RETARGET stake weighted time=%" PRId64 " actual time =%" PRId64 "[%f %%]\n\t chain time: [%" PRId64 " / %" PRId64 "]\n\t difficulty: [%f to %f]\n\t stake height: %" PRId64 " [AGE %" PRId64 " days, %" PRId64 " hours, %" PRId64 " minutes]\n\n",
             nBlockTime, max(pindexFirst->GetBlockTime() - pindexLast->GetBlockTime(), (int64) 1), ((100.0 * nLowerBound) / nUpperBound), nBlockTarget, nBlockTime, GetDifficulty(pindexFirst->nBits, 0), GetDifficulty(bnNew.GetCompact(), 0), pindexFirst->nChannelHeight, nDays, nHours, nMinutes);
         }
 
@@ -209,11 +198,6 @@ namespace Core
         will decrease keeping the time difference in difficulty jumps the same from diff 1 - 100. **/
     unsigned int RetargetCPU(const CBlockIndex* pindex, bool output)
     {
-        /** For regression testing only, allow low difficulty. **/
-        if (GetBoolArg("-regtest",false)) {
-            return bnProofOfWorkStartRegtest[1].getuint();
-        }
-
         /** Get Last Block Index [1st block back in Channel]. **/
         const CBlockIndex* pindexFirst = GetLastChannelIndex(pindex, 1);
         if (!pindexFirst->pprev)
@@ -321,7 +305,7 @@ namespace Core
             int64 nDays, nHours, nMinutes;
             GetChainTimes(GetChainAge(pindexFirst->GetBlockTime()), nDays, nHours, nMinutes);
 
-            printf("RETARGET[CPU] weighted time=%" PRId64 " actual time %" PRId64 ", [%f %%]\n\tchain time: [%" PRId64 " / %" PRId64 "]\n\treleased reward: %" PRId64 " [%f %%]\n\tdifficulty: [%f to %f]\n\tCPU height: %" PRId64 " [AGE %" PRId64 " days, %" PRId64 " hours, %" PRId64 " minutes]\n\n",
+            printf("RETARGET prime weighted time=%" PRId64 " actual time %" PRId64 ", [%f %%]\n\t chain time: [%" PRId64 " / %" PRId64 "]\n\t released reward: %" PRId64 " [%f %%]\n\t difficulty: [%f to %f]\n\t prime height: %" PRId64 " [AGE %" PRId64 " days, %" PRId64 " hours, %" PRId64 " minutes]\n\n",
             nBlockTime, max(pindexFirst->GetBlockTime() - pindexLast->GetBlockTime(), (int64) 1), nMod * 100.0, nBlockTarget, nBlockTime, pindexFirst->nReleasedReserve[0] / COIN, 100.0 * nChainMod, GetDifficulty(pindexFirst->nBits, 1), GetDifficulty(nBits, 1), pindexFirst->nChannelHeight, nDays, nHours, nMinutes);
         }
 
@@ -443,7 +427,7 @@ namespace Core
             int64 nDays, nHours, nMinutes;
             GetChainTimes(GetChainAge(pindexFirst->GetBlockTime()), nDays, nHours, nMinutes);
 
-            printf("RETARGET[GPU] weighted time=%" PRId64 " actual time %" PRId64 " [%f %%]\n\tchain time: [%" PRId64 " / %" PRId64 "]\n\treleased reward: %" PRId64 " [%f %%]\n\tdifficulty: [%f to %f]\n\tGPU height: %" PRId64 " [AGE %" PRId64 " days, %" PRId64 " hours, %" PRId64 " minutes]\n\n",
+            printf("RETARGET hash weighted time=%" PRId64 " actual time %" PRId64 " [%f %%]\n\t chain time: [%" PRId64 " / %" PRId64 "]\n\t released reward: %" PRId64 " [%f %%]\n\t difficulty: [%f to %f]\n\t hash height: %" PRId64 " [AGE %" PRId64 " days, %" PRId64 " hours, %" PRId64 " minutes]\n\n",
             nBlockTime, max(pindexFirst->GetBlockTime() - pindexLast->GetBlockTime(), (int64) 1), (100.0 * nLowerBound) / nUpperBound, nBlockTarget, nBlockTime, pindexFirst->nReleasedReserve[0] / COIN, 100.0 * nChainMod, GetDifficulty(pindexFirst->nBits, 2), GetDifficulty(bnNew.GetCompact(), 2), pindexFirst->nChannelHeight, nDays, nHours, nMinutes);
         }
 

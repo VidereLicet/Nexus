@@ -323,7 +323,7 @@ namespace Core
             if ((!txout.IsEmpty()) && txout.nValue < MIN_TXOUT_AMOUNT)
                 return DoS(100, error("CTransaction::CheckTransaction() : txout.nValue below minimum"));
 
-            if (txout.nValue > MAX_TXOUT_AMOUNT)
+            if (txout.nValue > MaxTxOut())
                 return DoS(100, error("CTransaction::CheckTransaction() : txout.nValue too high"));
 
             nValueOut += txout.nValue;
@@ -342,12 +342,7 @@ namespace Core
             vInOutPoints.insert(txin.prevout);
         }
 
-        if (IsCoinBase() || IsCoinStake())
-        {
-            if (vin[0].scriptSig.size() < 2 || vin[0].scriptSig.size() > 100)
-                return DoS(100, error("CTransaction::CheckTransaction() : coinbase script size"));
-        }
-        else
+        if (!IsCoinBase() && !IsCoinStake())
         {
             BOOST_FOREACH(const CTxIn& txin, vin)
                 if (txin.prevout.IsNull())
@@ -577,7 +572,7 @@ namespace Core
     {
         if (!(IsCoinBase() || IsCoinStake()))
             return 0;
-        return max(0, (nCoinbaseMaturity + 20) - GetDepthInMainChain());
+        return max(0, (nCoinbaseMaturity + (fTestNet ? 1 : 20)) - GetDepthInMainChain());
     }
 
 
@@ -842,7 +837,7 @@ namespace Core
                     return error("ConnectInputs() : %s prev tx already used at %s", GetHash().ToString().substr(0,10).c_str(), txindex.vSpent[prevout.n].ToString().c_str());
 
                 // Skip ECDSA signature verification when mining blocks (fMiner=true) since they are already checked on memory pool
-                if (!IsInitialBlockDownload() && !fMiner && !Wallet::VerifySignature(txPrev, *this, i, 0))
+                if (!fMiner && !Wallet::VerifySignature(txPrev, *this, i, 0))
                     return error("ConnectInputs() : %s Wallet::VerifySignature failed prev %s", GetHash().ToString().substr(0,10).c_str(), txPrev.GetHash().ToString().substr(0, 10).c_str());
 
                 // Mark outpoints as spent
@@ -858,9 +853,15 @@ namespace Core
             if (IsCoinStake())
             {
                 int64 nInterest;
-                GetCoinstakeInterest(indexdb, nInterest);
 
-                printf("ConnectInputs() : %f Value Out, %f Expected\n", (double)round_coin_digits(vout[0].nValue, 3) / COIN, (double)(round_coin_digits(nInterest + nValueIn, 3)) / COIN);
+                /* Read the Trust Key. */
+                CBlock block;
+                if(!block.ReadFromDisk(pindexBlock, true))
+                    return error("ConnectInputs() : couldn't read interest block from disk");
+
+                GetCoinstakeInterest(block, indexdb, nInterest);
+
+                printf("ConnectInputs() : %f Value Out, %f Expected\n", (double)round_coin_digits(vout[0].nValue, 6) / COIN, (double)(round_coin_digits(nInterest + nValueIn, 6)) / COIN);
 
                 if (round_coin_digits(vout[0].nValue, 3) > round_coin_digits((nInterest + nValueIn), 3))
                     return DoS(100, error("ConnectInputs() : %s stake reward mismatch", GetHash().ToString().substr(0,10).c_str()));
@@ -964,5 +965,3 @@ bool Wallet::CWalletTx::AcceptWalletTransaction()
     LLD::CIndexDB indexdb("r");
     return AcceptWalletTransaction(indexdb);
 }
-
-

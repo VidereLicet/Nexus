@@ -9,6 +9,8 @@
 namespace LLD
 {
 #ifdef USE_LLD
+    extern uint1024 hashCorruptedNext;
+
     class CIndexDB : public SectorDatabase
     {
     public:
@@ -24,6 +26,16 @@ namespace LLD
         bool ReadDiskTx(uint512 hash, Core::CTransaction& tx);
         bool ReadDiskTx(Core::COutPoint outpoint, Core::CTransaction& tx, Core::CTxIndex& txindex);
         bool ReadDiskTx(Core::COutPoint outpoint, Core::CTransaction& tx);
+
+        bool WriteTrustKey(uint576 hashTrustKey, Core::CTrustKey cTrustKey);
+        bool ReadTrustKey(uint576 hashTrustKey, Core::CTrustKey& cTrustKey);
+        bool HasTrustKey(uint576 hashTrustKey);
+        bool GetTrustKeys(std::vector<uint576>& vTrustKeys);
+        bool EraseTrustKey(uint576 hashTrustKey);
+
+        bool Bootstrapped();
+        bool Bootstrap();
+
         bool WriteBlockIndex(const Core::CDiskBlockIndex& blockindex);
         bool ReadBlockIndex(const uint1024 hashBlock, Core::CBlockIndex* pindexNew);
         bool ReadHashBestChain(uint1024& hashBestChain);

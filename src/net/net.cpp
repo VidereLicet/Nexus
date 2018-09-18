@@ -13,6 +13,7 @@
 #include "../util/strlcpy.h"
 #include "../util/ui_interface.h"
 #include "../wallet/db.h"
+#include "../core/unifiedtime.h"
 
 #ifdef WIN32
 #include <string.h>
@@ -80,11 +81,12 @@ namespace Net
     void CNode::PushGetBlocks(Core::CBlockIndex* pindexBegin, uint1024 hashEnd)
     {
         // Filter out duplicate requests
-        if (pindexBegin == pindexLastGetBlocksBegin && hashEnd == hashLastGetBlocksEnd)
+        if (pindexBegin == pindexLastGetBlocksBegin && hashEnd == hashLastGetBlocksEnd && GetUnifiedTimestamp() - nLastGetBlocks < 3)
             return;
 
         pindexLastGetBlocksBegin = pindexBegin;
         hashLastGetBlocksEnd = hashEnd;
+        nLastGetBlocks = GetUnifiedTimestamp();
 
         PushMessage("getblocks", Core::CBlockLocator(pindexBegin), hashEnd);
     }
@@ -736,7 +738,7 @@ namespace Net
                             if (nBytes > 0)
                             {
                                 vRecv.resize(nPos + nBytes);
-                                memcpy(&vRecv[nPos], pchBuf, nBytes);
+                                std::copy(&pchBuf[0], &pchBuf[0] + nBytes, &vRecv[nPos]);
                                 pnode->nLastRecv = GetUnifiedTimestamp();
                             }
                             else if (nBytes == 0)
@@ -812,12 +814,7 @@ namespace Net
                         printf("socket no message in first 60 seconds, %d %d\n", pnode->nLastRecv != 0, pnode->nLastSend != 0);
                         pnode->fDisconnect = true;
                     }
-                    else if (GetUnifiedTimestamp() - pnode->nLastSend > 60)
-                    {
-                        printf("socket not sending\n");
-                        pnode->fDisconnect = true;
-                    }
-                    else if (GetUnifiedTimestamp() - pnode->nLastRecv > 60)
+                    else if (GetUnifiedTimestamp() - pnode->nLastSend > 60 && GetUnifiedTimestamp() - pnode->nLastRecv > 60)
                     {
                         printf("socket inactivity timeout\n");
                         pnode->fDisconnect = true;
