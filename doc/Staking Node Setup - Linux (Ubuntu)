@@ -1,0 +1,130 @@
+1.  Introduction:  Staking Nexus with a Linux Ubuntu VPS
+
+This Staking wallet will run a full block-chain and discover blocks.  
+It will need cpu/harddrive/memory to perform these tasks reliabily.  Trying to stake on systems that don't 
+meet the system pre-requisites below will result in poor staking performance.
+
+Prerequisites-
+CPU-
+Memory-
+OS-
+#Domain name - required?  allows tls cert..proves staking node.  Allows for trusted communications from protocol staking nodes.
+#possibly a light stake node that joins a heavy stake node pool and light stake nodes dont require domain and tls certificate
+
+2.  Login and Create non-root user 
+
+OS -  Linux (Ubuntu 18.04)
+
+ssh root@<FQDN> or ssh root@<IP>
+apt-get install sudo
+USERNAME=nexususer
+useradd -m -s /bin/bash -G adm,systemd-journal,sudo $USERNAME && passwd $USERNAME
+(passwd $USERNAME)
+su $USERNAME
+su root
+
+
+
+3.  Package Installation and initial configuration
+FQDN='FQDN'
+echo "export FQDN=$FQDN" >> $HOME/.bashrc
+sudo apt-get update
+sudo apt install software-properties-common -y
+sudo add-apt-repository universe -y (not needed for debian)
+sudo apt-get install build-essential software-properties-common apt-transport-https lsb-release dirmngr pwgen git jq ufw curl aria2 -y
+sudo apt-get install libboost-all-dev
+sudo apt-get install libdb-dev libdb++-dev
+sudo apt-get install libdb-dev libdb++-dev
+sudo apt-get install libssl1.0-dev or sudo apt-get install libssl-dev
+sudo apt-get install libminiupnpc-dev
+sudo apt-get install libqrencode-dev
+sudo apt-get install qt4-qmake libqt4-dev
+sudo apt-get install lib32z1-dev
+
+3a.  Bootstrap
+
+sudo apt-get install unzip
+cd ~/.Nexus
+wget https://nexusearth.com/database/recent.zip
+unzip recent.zip
+
+3b.  Swapfile setup
+free -h
+sudo swapon -s
+sudo swapoff /swapfile
+sudo rm /swapfile
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo "vm.swappiness=10" | sudo tee -a /etc/sysctl.conf
+echo "/swapfile none swap sw 0 0" | sudo tee -a /etc/fstab
+sudo sysctl -p
+
+
+4. Securing host for remote access
+
+4a. SSH -  
+-Check for key?
+ls -alh ~/.ssh/
+
+-No id_rsa and id_rsa.pub files present? If present skip to ssh-copy-id.
+
+-Generate pub/priv key from remote machine
+ssh-keygen -t rsa -b 2048
+
+-Push pub key to remote staking machine
+ssh-copy-id devops@<FQDN>
+
+-Lock down staking machine so that only ssh access is allowed.
+
+sudo sed -i  "s/.*PermitRootLogin yes/PermitRootLogin no/g" /etc/ssh/sshd_config &&\
+sudo sed -i  "s/.*PasswordAuthentication yes/PasswordAuthentication no/g" /etc/ssh/sshd_config &&\
+sudo sed -i  "s/.*ChallengeResponseAuthentication yes/ChallengeResponseAuthentication no/g" /etc/ssh/sshd_config
+
+restart sshd
+sudo systemctl restart sshd
+
+
+
+4b.  Firewall UFW -  Securing the host (firewall)
+
+3 ports need to be opened for NXS wallet operation.
+
+sudo systemctl enable ufw
+
+sudo ufw default allow outgoing
+sudo ufw default deny incoming
+sudo ufw allow ssh/tcp
+sudo ufw limit ssh/tcp
+sudo ufw allow http/tcp
+sudo ufw allow https/tcp
+sudo ufw allow 9323/tcp
+sudo ufw allow 9324/tcp
+sudo ufw allow 9325/tcp
+sudo ufw logging on
+sudo ufw -f enable
+sudo ufw status
+
+
+5.  Certificate Setup on Staking node
+
+Certbot setup optional for staking nodes with FQDNs
+
+
+6.  Staking Wallet install
+
+-Nexus-qt vs Nexus-cli
+
+-Configuring Stake wallet for minting
+
+-Staking-  Waiting for trust and genesis transaction
+
+-Monitoring of staking
+
+7. Configure Persistent services
+
+-Wallet
+-Certificate renewal
+
+
